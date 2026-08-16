@@ -7,6 +7,8 @@ name = "obsdim"
 version = "0.1.0.dev0"
 description = "Concentration-based intrinsic dimension of geometric data sets (observable diameters, Hanika-Schneider-Stumme)"
 readme = "README.md"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 authors = [
     { name = "Tom Hanika" },

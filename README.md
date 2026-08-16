@@ -167,3 +167,7 @@ The test suite verifies the implementation against exact values derived
 from the papers (e.g. the nominal scale has dimension exactly n⁴, the
 contranominal scale converges to 64/9 — Tohoku §6.2.2), against brute-force
 subset enumeration of the defining formula, and against ID4GeoL.
+
+## License
+
+[AGPL-3.0-or-later](LICENSE).

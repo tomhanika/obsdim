@@ -38,8 +38,7 @@ the authors' experiment code, [ID4GeoL](https://github.com/mstubbemann/ID4GeoL).
 ## Install
 
 ```bash
-pip install obsdim               # not yet published; for now:
-pip install -e .
+pip install obsdim
 ```
 
 Hard dependencies: `numpy`, `scipy`, `scikit-learn`. Extras:

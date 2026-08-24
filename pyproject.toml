@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "obsdim"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Concentration-based intrinsic dimension of geometric data sets (observable diameters, Hanika-Schneider-Stumme)"
 readme = "README.md"
 license = "AGPL-3.0-or-later"

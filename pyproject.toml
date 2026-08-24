@@ -38,8 +38,9 @@ torch = ["torch", "array-api-compat>=1.4"]
 dev = ["pytest", "ruff"]
 
 [project.urls]
-# Experiment code the numerical results are cross-validated against:
-"ID4GeoL" = "https://github.com/mstubbemann/ID4GeoL"
+Homepage = "https://github.com/tomhanika/obsdim"
+Repository = "https://github.com/tomhanika/obsdim"
+Issues = "https://github.com/tomhanika/obsdim/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/obsdim"]

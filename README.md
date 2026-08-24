@@ -1,5 +1,9 @@
 # obsdim
 
+[![CI](https://github.com/tomhanika/obsdim/actions/workflows/ci.yml/badge.svg)](https://github.com/tomhanika/obsdim/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/obsdim)](https://pypi.org/project/obsdim/)
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue.svg)](LICENSE)
+
 **Concentration-based intrinsic dimension of geometric data sets.**
 
 `obsdim` is the maintained, pip-installable reference implementation of the

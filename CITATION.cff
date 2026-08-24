@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: >-
+  If you use obsdim in your research, please cite the two papers below
+  (the theory and the large-scale algorithms).
+title: "obsdim: concentration-based intrinsic dimension of geometric data sets"
+type: software
+authors:
+  - family-names: Hanika
+    given-names: Tom
+repository-code: "https://github.com/tomhanika/obsdim"
+license: AGPL-3.0-or-later
+keywords:
+  - intrinsic dimension
+  - concentration of measure
+  - metric measure spaces
+  - observable diameter
+  - curse of dimensionality
+preferred-citation:
+  type: article
+  title: Intrinsic dimension of geometric data sets
+  authors:
+    - family-names: Hanika
+      given-names: Tom
+    - family-names: Schneider
+      given-names: Friedrich Martin
+    - family-names: Stumme
+      given-names: Gerd
+  journal: Tohoku Mathematical Journal
+  volume: 74
+  issue: 1
+  year: 2022
+  start: 23
+  end: 52
+  doi: 10.2748/tmj.20201015a
+references:
+  - type: article
+    title: Intrinsic Dimension for Large-Scale Geometric Learning
+    authors:
+      - family-names: Stubbemann
+        given-names: Maximilian
+      - family-names: Hanika
+        given-names: Tom
+      - family-names: Schneider
+        given-names: Friedrich Martin
+    journal: Transactions on Machine Learning Research
+    year: 2023
+    url: "https://openreview.net/forum?id=85BfDdYMBY"

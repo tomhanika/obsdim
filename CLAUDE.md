@@ -1,127 +1,87 @@
-# Project brief: Python package for geometric intrinsic dimension
+# Development guide
 
-## Goal
+`obsdim` is the reference implementation of the concentration-based
+intrinsic dimension of Hanika/Schneider/Stumme (Tohoku Math. J. 74 (2022),
+23–52, doi:10.2748/tmj.20201015a — "Tohoku") and the scalable algorithms of
+Stubbemann/Hanika/Schneider (TMLR 2023, arXiv:2210.05301 — "TMLR"). The two
+papers are the authoritative spec; every public function's docstring cites
+the definition/theorem/algorithm it implements. Keep it that way.
 
-Build a pip-installable reference implementation of the intrinsic-dimension (ID)
-approach of Tom Hanika and coauthors:
+## Layout
 
-- **Theory ("the Tohoku paper"):** Hanika, Schneider, Stumme,
-  *Intrinsic dimension of geometric data sets*, Tohoku Mathematical Journal
-  74 (2022), no. 1, 23-52. doi:10.2748/tmj.20201015a.
-  Axiomatic ID for metric measure (mm-) spaces via the concentration of
-  measure phenomenon (following V. Pestov): the dimension is defined through
-  observable / partial diameters of push-forwards of the measure under a
-  family F of 1-Lipschitz feature functions. Crucially, the dimension
-  **∂_F is parametrized by the feature family F**; one-point distance
-  functions d(x, ·) are the canonical instance, but F is exchangeable.
-- **Scalable computation:** Stubbemann, Hanika, Schneider,
-  *Intrinsic Dimension for Large-Scale Geometric Learning*, TMLR 2023.
-  https://openreview.net/forum?id=85BfDdYMBY (arXiv:2210.05301).
-  Sampling-based approximation (sample anchor functions instead of using all
-  n distance functions) making the computation sub-quadratic.
-- Existing experiment code (NOT a library): https://github.com/mstubbemann/ID4GeoL
-  — use it to cross-validate numerical results; position the new package as
-  the maintained, pip-installable implementation and cross-link the repos.
-- Related: Hille, Stubbemann, Hanika, *Reproducibility and Geometric Intrinsic
-  Dimensionality* (TMLR 2024) — uses this ID for feature selection; a good
-  downstream use case for docs/examples.
+- `src/obsdim/_core.py` — the dimension functional. Consumes only the value
+  matrix `Phi[j, i] = f_j(x_i)` plus point weights; knows nothing about
+  data or metrics. Partial/observable diameters (Tohoku Def. 4.1),
+  discriminability Δ = ∫ ObsDiam ∧ 1 dα (Prop. 4.5), dimension ∂ = 1/Δ²
+  (Prop. 5.3); exact sliding-window algorithm (TMLR Thm 3.2 / Lemma 3.5),
+  support-sequence bounds + exact refinement (TMLR §4), weighted measures.
+- `src/obsdim/_families.py` — feature families producing Phi (the
+  exchangeable-F layer): `OnePointDistances`, `CoordinateProjections`,
+  `CustomFeatures`, `PrecomputedFeatures`, `UnionFamily`, `FeatureScaler`.
+- `src/obsdim/_estimator.py` — sklearn estimator `GeometricID`
+  (`fit(X).dimension_`, skdim-compatible).
+- `src/obsdim/graphs.py` — shortest-path distances, TMLR Def. 5.1 k-hop
+  features.
+- Numerical code is written against the Python Array API (`_compat.py`);
+  plain NumPy needs no extras.
 
-The user is (or works with) the paper authors; treat the papers as the
-authoritative spec. **Fetch the two papers and implement the exact functional
-from their definitions** — the sketch deliberately leaves
-`observable_dimension()` as a stub.
+## Build, test, lint
 
-## Decisions made in conversation
+```bash
+python -m venv .venv && .venv/bin/pip install -e .[dev]
+.venv/bin/pytest              # full suite, seconds
+.venv/bin/ruff check src tests examples
+for f in examples/0*.py; do .venv/bin/python "$f"; done   # CI runs these too
+```
 
-### Naming
-Candidate names, all verified **free on PyPI as of 2026-08-05**:
-`obsdim` (recommended; from "observable diameter"), `geomdim`, `gidim`,
-`concdim`, plus others. Rejected: `pestov` (named after a person),
-`geodim`/geoid-like (geodesy collisions). Working name in this brief: **obsdim**
-— confirm the final choice with the user before publishing, register on PyPI
-early, keep module name == distribution name.
+## Testing conventions (do not "fix" these)
 
-### Compatibility strategy
-- **Primary interface: scikit-learn conventions.** `GeometricID(BaseEstimator)`
-  with `fit(X)` and result in `.dimension_`. Rationale: ID estimation is a
-  fit-once unsupervised computation, and `scikit-dimension` (skdim) — the de
-  facto hub for ID estimators (MLE/Levina-Bickel, TwoNN, DANCo, ...) — uses
-  exactly this pattern, so the estimator drops into existing benchmark
-  scripts. Validate with `sklearn.utils.estimator_checks`.
-- **No separate PyTorch/JAX backends.** Write the numerical core against the
-  Python Array API standard using `array-api-compat` (as scikit-learn/SciPy
-  do). Same code then runs on NumPy, PyTorch (CPU/GPU), CuPy, JAX arrays.
-  Full end-to-end JAX jit-compilability is a non-goal for now (dynamic shapes
-  from sampling); "accepts JAX/torch arrays and stays on device" is the goal.
-- **Hard deps:** numpy, scipy, scikit-learn only. Extras:
-  `obsdim[torch]` (tensor input / GPU convenience),
-  `obsdim[graphs]` (networkx / PyTorch Geometric adapter that computes graph
-  distances — shortest-path or diffusion — and feeds them in as precomputed).
-- `metric="precomputed"` (distance matrix input) is first-class: the theory
-  lives on general mm-spaces, not just R^n. This is a differentiator over
-  most ID packages and what makes the method apply to graphs.
+- Exact oracles from the papers: nominal scale ∂ = n⁴ exactly;
+  contranominal scale ∂ → 64/9; Prop. 6.2 indicator partial diameters.
+  The closed contranominal formula *printed* in Tohoku §6.2.2 is a
+  trapezoidal approximation (n=4: paper 9/32, exact 10/32) — tests use the
+  exact step-function integral on purpose; do not adjust them to the paper.
+- `tests/test_id4geol_crosscheck.py` transcribes kernel functions from
+  https://github.com/mstubbemann/ID4GeoL (MIT, © Stubbemann) — keep the
+  attribution; obsdim must reproduce its numbers to ~1e-10.
+- Brute-force subset enumeration validates the sliding window on tiny data.
+- `parametrize_with_checks` keeps sklearn compatibility; run it after any
+  estimator change.
 
-### Architecture (the key design decision — see obsdim_sketch.py)
-The user emphasized that the exchangeable feature set is a major idea of the
-Tohoku paper and must be first-class. Observation enabling the design: the
-dimension functional never needs raw data or the metric — only the **value
-matrix Phi, shape (k, n), Phi[j,i] = f_j(x_i)**, plus point weights
-(the measure). Hence two decoupled layers:
+## Things that look wrong but aren't
 
-1. **Core functional** `observable_dimension(phi, weights)` — push-forwards,
-   partial/observable diameters over a kappa-grid, integration → dimension.
-   Array-API-agnostic. Knows nothing about where features came from.
-2. **`FeatureFamily` plugins** producing Phi:
-   - `OnePointDistances(metric=..., anchors="all"|int)` — canonical family;
-     `anchors="all"` = exact Tohoku computation (O(n^2)),
-     `anchors=m` = the TMLR sampling approximation. One parameter, not two
-     algorithms.
-   - `CustomFeatures(funcs, lipschitz=...)` — arbitrary user callables.
-   - `PrecomputedFeatures(phi)` — user hands over Phi directly (features need
-     not be functions of any coordinates the package sees: kernel columns,
-     model logits, graph centralities, ...).
-   - `UnionFamily([...])` — F_1 ∪ ... ∪ F_m, e.g. "distances plus three
-     domain features".
+- The TMLR speedup is **support sequences over subset sizes k**, spaced
+  geometrically **dense near k = n** (`s = n + 2 − geomspace(n, 2, l)`);
+  dense-near-2 spacing gives ~10× worse error bounds. Anchor sampling
+  (`anchors=m`) is a separate Monte-Carlo knob that biases ∂ upward
+  (feature antitonicity), not the TMLR mechanism.
+- Normalization defaults differ deliberately: core functions default
+  `normalize=None` (the paper functional verbatim, incl. the ∧1 cap), the
+  estimator defaults `normalize="diameter"` (Tohoku §6.1.1, the papers'
+  experimental methodology).
+- Normalization semantics: global τ = change of units; per-column
+  (`CoordinateProjections(scale="range")` = sup-metric on min-max-scaled
+  columns) and per-member (`UnionFamily(..., normalize_members=True)`)
+  change the induced metric d_F — that is documented behavior, family
+  layer only.
+- Features that fail to separate points are accepted; the result equals
+  the dimension of the quotient geometric data set (documented semantics).
 
-**Lipschitz normalization:** the axiomatics require 1-Lipschitz features.
-Built-in families guarantee this by construction (distance functions,
-unit-vector projections). For user functions: `lipschitz="estimate"`
-(empirical constant from sampled pairs, then rescale — must respect the
-chosen metric, the sketch's Euclidean shortcut is marked), a declared float,
-or `None` with the documented caveat that dimensions are then only comparable
-within that fixed family. Be explicit in docs about when the package computes
-*the* ∂_F of the paper vs. a user-defined variant.
+## Releasing
 
-`sample_weight` support = non-uniform measures on the mm-space.
+1. Bump the version in `pyproject.toml` **and** `src/obsdim/__init__.py`.
+2. Commit, `git tag vX.Y.Z`, push commit and tag to `github`.
+3. The `Release` workflow (trusted publishing, environment `pypi`) tests,
+   builds, and uploads to PyPI — no tokens. Create a GitHub release from
+   the tag with `gh release create`.
 
-### Open question (ask the user, do not decide unilaterally)
-Should families be allowed to be data-dependent at fit time beyond anchor
-sampling (e.g., distances in an embedding learned on X itself)? Mechanically
-supported by the interface, but it changes the statistical meaning of ∂_F —
-may deserve an explicit flag and a documentation section.
+Remotes: `github` (github.com/tomhanika/obsdim, primary/public) and
+`origin` (GWDG GitLab, historical name `dimcon`) — push to both.
 
-## Suggested next steps
+## Open questions (ask Tom, do not decide unilaterally)
 
-1. Read both papers; implement `observable_dimension` exactly per their
-   definitions, with docstrings mapping each function to the corresponding
-   definition/theorem ("reference implementation" credibility).
-2. Package scaffold: `pyproject.toml`, `src/` layout, pytest, ruff, CI.
-3. Tests:
-   - reproduce known values from the papers (e.g. spheres S^n /
-     Gaussian benchmarks; sqrt(n)-type concentration behavior),
-   - cross-check against ID4GeoL on a small dataset,
-   - invariance: `OnePointDistances(metric="precomputed")` on a Euclidean
-     distance matrix == `OnePointDistances(metric="euclidean")` on raw
-     points; `PrecomputedFeatures(Phi)` == the family that produced Phi,
-   - `sklearn.utils.estimator_checks`,
-   - Array API: same result (up to tolerance) for numpy vs torch inputs.
-4. Docs: quickstart, a "choosing/creating feature families" guide (the
-   package's headline feature), a graph example, comparison snippet against
-   skdim estimators.
-
-## Files in this bundle
-
-- `CLAUDE.md` — this brief.
-- `obsdim_sketch.py` — the agreed interface sketch (feature-family protocol,
-  built-in families, estimator skeleton, stubbed core functional). Treat the
-  *interface* as agreed with the user; the internals are illustrative.
+- Should data-dependent families beyond anchor sampling (e.g. distances in
+  an embedding learned on X itself) get an explicit flag/doc section? They
+  change the statistical meaning of ∂_F.
+- Optional warning when features do not separate points (quotient
+  semantics) — discussed, not yet requested.
